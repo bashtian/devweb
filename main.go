@@ -10,14 +10,14 @@
 // The server program should be a trivial main program like:
 //
 //	package main
-//	
+//
 //	import (
 //		"code.google.com/p/rsc/devweb/slave"
-//	
+//
 //		_ "this/package"
 //		_ "that/package"
 //	)
-//	
+//
 //	func main() {
 //		slave.Main()
 //	}
@@ -31,7 +31,7 @@
 //
 package main
 
-// BUG(rsc): Devweb should probably 
+// BUG(rsc): Devweb should probably
 
 import (
 	"bufio"
@@ -64,6 +64,8 @@ says which TCP port to listen on.
 }
 
 var addr = flag.String("addr", ":8000", "web service address")
+var dir = flag.String("dir", "", "working directory")
+var binDir = flag.String("bin", "", "path to bin")
 var rootPackage string
 
 func main() {
@@ -211,8 +213,11 @@ func buildProxy() (c net.Conn, proxy *cmdProxy, err error) {
 	if latest.After(p.build) {
 		p.active.kill()
 		p.active = nil
-
-		out, err := exec.Command("go", "build", "-o", "prox.exe", rootPackage).CombinedOutput()
+		cmd := exec.Command("go", "build", "-o", "prox.exe", rootPackage)
+		if *binDir != "" {
+			cmd.Dir = *binDir
+		}
+		out, err := cmd.CombinedOutput()
 		if len(out) > 0 {
 			return nil, nil, fmt.Errorf("%s", out)
 		}
@@ -241,6 +246,9 @@ func buildProxy() (c net.Conn, proxy *cmdProxy, err error) {
 	addr := l.Addr().String()
 
 	cmd := exec.Command("prox.exe", "LISTEN_STDIN")
+	if *dir != "" {
+		cmd.Dir = *dir
+	}
 	cmd.Stdin, err = l.(*net.TCPListener).File()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
