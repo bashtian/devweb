@@ -216,6 +216,8 @@ func buildProxy() (c net.Conn, proxy *cmdProxy, err error) {
 		cmd := exec.Command("go", "build", "-o", "prox.exe", rootPackage)
 		if *binDir != "" {
 			cmd.Dir = *binDir
+		} else if p := os.Getenv("GOPATH"); p != "" {
+			cmd.Dir = p + "/bin"
 		}
 		out, err := cmd.CombinedOutput()
 		if len(out) > 0 {
